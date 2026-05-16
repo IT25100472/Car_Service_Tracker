@@ -9,6 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.carmanager</groupId>
+    <artifactId>feedback_review_management</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>feedback_review_management</name>
+    <description>feedback_review_management</description>
     <artifactId>car_management</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>car_management</name>
