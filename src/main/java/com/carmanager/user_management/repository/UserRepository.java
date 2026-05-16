@@ -1,0 +1,14 @@
+package com.carmanager.user_management.repository;
+
+import com.example.usermanagement.model.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.Optional;
+
+@Repository
+public interface UserRepository extends JpaRepository<User, Long> {
+
+    // find a user by their email address
+    Optional<User> findByEmail(String email);
+}
