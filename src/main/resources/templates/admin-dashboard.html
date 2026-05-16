@@ -2,9 +2,1004 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>CarService Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FullCalendar CDN -->
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #1a1d2d; color: #fff; display: flex; height: 100vh; overflow: hidden; }
+        
+        /* Sidebar */
+        .sidebar { width: 260px; background: #141724; display: flex; flex-direction: column; border-right: 1px solid #2a2d3e; }
+        .logo { padding: 24px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #2a2d3e; }
+        .logo-icon { width: 40px; height: 40px; background: #1bc3a1; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .logo-text h2 { font-size: 18px; font-weight: 700; color: #fff; }
+        .logo-text p { font-size: 12px; color: #8b92a5; }
+        
+        .menu { flex: 1; padding: 20px 12px; display: flex; flex-direction: column; gap: 8px; }
+        .menu-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: #8b92a5; text-decoration: none; border-radius: 8px; font-weight: 500; font-size: 14px; transition: 0.2s; cursor: pointer; }
+        .menu-item:hover { color: #fff; background: rgba(255,255,255,0.05); }
+        .menu-item.active { background: #1bc3a1; color: #fff; }
+        
+        .collapse-btn { padding: 20px; border-top: 1px solid #2a2d3e; color: #8b92a5; cursor: pointer; display: flex; align-items: center; gap: 10px; font-size: 14px; }
+        .collapse-btn:hover { color: #fff; }
+        
+        /* Main Content */
+        .main { flex: 1; display: flex; flex-direction: column; background: #1a1d2d; }
+        
+        /* Topbar */
+        .topbar { height: 80px; padding: 0 30px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2a2d3e; background: #1a1d2d; }
+        .search-bar { display: flex; align-items: center; background: #222638; border-radius: 8px; padding: 10px 16px; width: 400px; border: 1px solid #2a2d3e; }
+        .search-bar input { background: transparent; border: none; outline: none; color: #fff; width: 100%; margin-left: 10px; font-size: 14px; }
+        .search-bar input::placeholder { color: #8b92a5; }
+        
+        .user-profile { display: flex; align-items: center; gap: 16px; }
+        .notification { position: relative; color: #8b92a5; cursor: pointer; font-size: 20px;}
+        .badge-dot { position: absolute; top: -5px; right: -5px; background: #f39c12; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 10px; font-weight:bold; }
+        .profile-info { display: flex; align-items: center; gap: 12px; }
+        .avatar { width: 40px; height: 40px; background: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #333; font-weight: bold; }
+        .user-text h4 { font-size: 14px; color: #fff; }
+        .user-text p { font-size: 12px; color: #8b92a5; }
+        
+        /* Content Area */
+        .content-area { flex: 1; padding: 30px; overflow-y: auto; }
+        .panel { background: #222638; border-radius: 12px; border: 1px solid #2a2d3e; display: none; flex-direction: column; min-height: 500px; }
+        .panel.active { display: flex; }
+        
+        .panel-header { padding: 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2d3e; }
+        .panel-title h3 { font-size: 20px; font-weight: 600; margin-bottom: 6px; }
+        .panel-title p { color: #8b92a5; font-size: 13px; }
+        
+        .btn-add { background: #1bc3a1; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s; }
+        .btn-add:hover { background: #15a88a; }
+        
+        .panel-toolbar { padding: 20px 24px; }
+        .small-search { width: 300px; }
+        
+        /* Table */
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 16px 24px; color: #8b92a5; font-size: 12px; font-weight: 600; border-bottom: 1px solid #2a2d3e; }
+        td { padding: 16px 24px; color: #d1d4dc; font-size: 13px; border-bottom: 1px solid #2a2d3e; }
+        tr:hover { background: rgba(255,255,255,0.02); }
+        
+        .status-badge { padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block; }
+        .status-active { background: rgba(27, 195, 161, 0.15); color: #1bc3a1; }
+        .status-inactive { background: rgba(55, 138, 221, 0.15); color: #378add; }
+        
+        .action-icon { color: #8b92a5; cursor: pointer; margin-right: 12px; font-size: 14px; transition: 0.2s; background: none; border: none; }
+        .action-icon:hover { color: #fff; }
+        .action-delete:hover { color: #e74c3c; }
+        
+        /* New Button Styles for Table Actions */
+        .btn-table { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; border: none; transition: 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+        .btn-edit { background: rgba(55, 138, 221, 0.15); color: #378add; margin-right: 6px; }
+        .btn-edit:hover { background: #378add; color: #fff; }
+        .btn-del { background: rgba(231, 76, 60, 0.15); color: #e74c3c; }
+        .btn-del:hover { background: #e74c3c; color: #fff; }
+        .btn-promote { background: rgba(155, 89, 182, 0.15); color: #9b59b6; margin-right: 6px; }
+        .btn-promote:hover { background: #9b59b6; color: #fff; }
+        .btn-demote { background: rgba(243, 156, 18, 0.15); color: #f39c12; margin-right: 6px; }
+        .btn-demote:hover { background: #f39c12; color: #fff; }
+
+        /* Dropdown */
+        .dropdown { position: relative; cursor: pointer; }
+        .dropdown-menu { position: absolute; top: 100%; right: 0; background: #1a1d2d; border: 1px solid #2a2d3e; border-radius: 8px; padding: 8px 0; min-width: 180px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: none; margin-top: 10px; z-index: 10; }
+        .dropdown.active .dropdown-menu { display: block; }
+        .dropdown-header { padding: 8px 16px; font-size: 11px; font-weight: 600; color: #8b92a5; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #2a2d3e; margin-bottom: 4px; }
+        .dropdown-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; color: #d1d4dc; text-decoration: none; font-size: 13px; transition: 0.2s; cursor: pointer; }
+        .dropdown-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
+        .dropdown-item.logout { color: #e74c3c; }
+        .dropdown-item.logout:hover { background: rgba(231, 76, 60, 0.1); }
+
+        /* Dashboard Cards Update */
+        .dash-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; padding: 24px; }
+        .d-card { background: #2f3148; border-radius: 12px; border: 1px solid #3c3e56; padding: 36px 16px; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: 0.2s;}
+        .d-card h2 { font-size: 38px; font-weight: 700; margin-bottom: 12px; }
+        .d-card p { color: #8b92a5; font-size: 13px; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 0; white-space: nowrap;}
+        .d-card p span.icon { font-size: 15px; }
+        
+        .c-teal { color: #00d0e4; }
+        .c-red { color: #ff5b5b; }
+
+        /* PROFILE DROPDOWN STYLES */
+        .profile-wrap { position:relative; }
+        .profile-btn { width:40px; height:40px; border-radius:50%; background: #7c3aed;
+                       color:#fff; border:none; cursor:pointer; font-size:16px; font-weight:600;
+                       display:flex; align-items:center; justify-content:center;
+                       transition:transform .15s; }
+        .profile-btn:hover { transform:scale(1.08); }
+
+        .dropdown { display:none; position:absolute; right:0; top:52px; background: #1a1d2d;
+                    border:1px solid #2a2d3e; border-radius:12px; width:220px;
+                    box-shadow:0 8px 32px rgba(0,0,0,0.4); overflow:hidden; z-index:200; }
+        .dropdown.open { display:block; animation:fadeIn .15s ease; }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+        
+        .dropdown-header { padding:16px; border-bottom:1px solid #2a2d3e; text-align: left; }
+        .dropdown-header p { font-size:13px; font-weight:600; color: #fff; margin-bottom: 2px; margin-top: 0; }
+        .dropdown-header span { font-size:12px; color: #8b92a5; text-transform: none; letter-spacing: normal; }
+        
+        .dropdown-item { display:flex; align-items:center; gap:10px; padding:12px 16px;
+                         font-size:14px; color: #d1d4dc; cursor:pointer;
+                         transition:background .1s; border:none; background:none; width:100%; text-align:left; }
+        .dropdown-item:hover { background: rgba(255,255,255,0.05); color: #fff; }
+        .dropdown-item.danger { color: #e74c3c; }
+        .dropdown-item.danger:hover { background: rgba(231, 68, 68, 0.1); }
+        .dropdown-icon { width:18px; text-align:center; font-size:15px; }
+        .dropdown-divider { border:none; border-top:1px solid #2a2d3e; margin:4px 0; }
+
+        /* OVERLAYS */
+        .del-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7);
+                       backdrop-filter: blur(4px); justify-content:center; align-items:center; z-index:500; }
+        .del-overlay.show { display:flex; animation:fadeIn .2s ease; }
+        .del-popup { background: #1a1d2d; border: 1px solid #2a2d3e; border-radius:20px; padding:40px 36px;
+                     text-align:center; max-width:360px; width:90%;
+                     box-shadow:0 20px 60px rgba(0,0,0,0.5); }
+        .del-icon { font-size:48px; margin-bottom:16px; }
+        .del-popup h3 { font-size:22px; margin-bottom:8px; color: #fff; }
+        .del-popup p { font-size:14px; color: #8b92a5; line-height:1.6; margin-bottom:24px; }
+        .del-btns { display:flex; gap:12px; }
+        .del-btns button { flex:1; padding:10px; border-radius:8px; font-size:14px;
+                           font-weight:500; cursor:pointer; border:none; }
+        .del-cancel { background: rgba(255,255,255,0.05); color:#fff; }
+        .del-cancel:hover { background: rgba(255,255,255,0.1); }
+        .del-confirm { background: #e74c3c; color:#fff; }
+        .del-confirm:hover { background: #c0392b; }
+        .c-yellow { color: #ffd166; }
+        
+        /* Tabs */
+        .tab-switcher { display: flex; gap: 8px; margin-bottom: 20px; }
+        .tab-btn { background: rgba(255,255,255,0.05); color: #8b92a5; border: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; transition: 0.2s; }
+        .tab-btn.active { background: #1bc3a1; color: #fff; }
+        
+        /* New Status Badges */
+        .badge-in-progress { background: rgba(55, 138, 221, 0.15); color: #378add; }
+        .badge-scheduled { background: rgba(27, 195, 161, 0.15); color: #1bc3a1; }
+        .badge-completed { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        
+        .pay-pending { color: #f39c12; }
+        .pay-paid { color: #10b981; }
+
+        /* FullCalendar Custom Dark Theme */
+        #bookingCalendar { background: #222638; border-radius: 12px; margin-top: 10px; min-height: 600px; padding: 20px; border: 1px solid #2a2d3e; }
+        .fc { font-family: 'Inter', sans-serif; color: #fff; }
+        .fc-toolbar-title { font-size: 1.2rem !important; font-weight: 600; color: #fff; }
+        .fc-button-primary { background: #1bc3a1 !important; border: none !important; text-transform: capitalize !important; }
+        .fc-button-primary:hover { background: #15a88a !important; }
+        .fc-col-header-cell-cushion { color: #8b92a5; font-size: 13px; text-transform: uppercase; }
+        .fc-daygrid-day-number { color: #fff; font-size: 13px; }
+        .fc-day-today { background: rgba(27, 195, 161, 0.05) !important; }
+        .fc-event { border: none !important; border-radius: 4px !important; padding: 2px 4px !important; }
+        .fc-event-title { font-weight: 600; font-size: 11px; }
+        .fc-theme-standard td, .fc-theme-standard th { border: 1px solid #2a2d3e !important; }
+        .status-event-approved { background: #1bc3a1 !important; }
+        .status-event-pending { background: #378add !important; }
+    </style>
 </head>
 <body>
 
+<div class="sidebar">
+    <div class="logo">
+        <div class="logo-icon">🚗</div>
+        <div class="logo-text">
+            <h2>CarService</h2>
+            <p>Admin Panel</p>
+        </div>
+    </div>
+    <div class="menu">
+        <a class="menu-item" onclick="showPanel('dashboard')" id="nav-dashboard">📊 Dashboard</a>
+        <a class="menu-item active" onclick="showPanel('customers')" id="nav-customers">👥 Customers</a>
+        <a class="menu-item" onclick="showPanel('team')" id="nav-team">🛡️ Team / Admins</a>
+        <a class="menu-item" onclick="showPanel('vehicles')" id="nav-vehicles">🚗 Vehicles</a>
+        <a class="menu-item" onclick="showPanel('services')" id="nav-services">🔧 Services</a>
+        <a class="menu-item" onclick="showPanel('reminders')" id="nav-reminders">⏰ Reminders</a>
+        <a class="menu-item" onclick="showPanel('inventory')" id="nav-inventory">📦 Inventory</a>
+        <a class="menu-item" onclick="showPanel('requests')" id="nav-requests">📩 Part Requests</a>
+        <a class="menu-item" onclick="showPanel('bookings')" id="nav-bookings">📅 Service Bookings</a>
+        <a class="menu-item" onclick="showPanel('reviews')" id="nav-reviews">⭐ Reviews</a>
+    </div>
+    <div class="collapse-btn">
+        <span><</span> Collapse
+    </div>
+</div>
+
+<div class="main">
+    <div class="topbar">
+        <div class="search-bar">
+            <span>🔍</span>
+            <input type="text" placeholder="Search customers, vehicles, bookings...">
+        </div>
+        <div class="profile-wrap" style="display: flex; align-items: center; gap: 16px;">
+            <div class="notification" style="position: relative; color: #8b92a5; cursor: pointer; font-size: 20px;">
+                🔔 <span class="badge-dot">3</span>
+            </div>
+            <div style="position: relative;">
+                <button class="profile-btn" id="profileBtn" onclick="toggleDropdown()">
+                    <span th:text="${userInitial != null ? userInitial : 'A'}">A</span>
+                </button>
+                <div class="dropdown" id="dropdown">
+                    <div class="dropdown-header">
+                        <p th:text="${userName != null ? userName : 'Admin'}">Admin</p>
+                        <span th:text="${userEmail != null ? userEmail : 'admin@cartracker.com'}">admin@email</span>
+                    </div>
+                    <button class="dropdown-item" onclick="window.location.href='/edit-profile'">
+                        <span class="dropdown-icon">✏️</span> Edit Profile
+                    </button>
+                    <hr class="dropdown-divider">
+                    <button class="dropdown-item danger" onclick="showDeleteConfirm()">
+                        <span class="dropdown-icon">🗑️</span> Delete Account
+                    </button>
+                    <button class="dropdown-item" onclick="logout()">
+                        <span class="dropdown-icon">🚪</span> Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="content-area">
+        
+        <!-- Customers Panel -->
+        <div class="panel active" id="panel-customers">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <h3>Customers</h3>
+                    <p>Manage your customer database</p>
+                </div>
+                <button class="btn-add" onclick="window.location.href='/register'">+ Add Customer</button>
+            </div>
+            <div class="panel-toolbar">
+                <div class="search-bar small-search">
+                    <span>🔍</span>
+                    <input type="text" placeholder="Search customers...">
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="userTable"></tbody>
+            </table>
+        </div>
+
+        <!-- Team Panel -->
+        <div class="panel" id="panel-team">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <h3>Administration Team</h3>
+                    <p>Manage admins and system operators</p>
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Role</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="teamTable"></tbody>
+            </table>
+        </div>
+
+        <!-- Vehicles Panel -->
+        <div class="panel" id="panel-vehicles">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <h3>Vehicles</h3>
+                    <p>Manage registered customer vehicles</p>
+                </div>
+                <button class="btn-add" onclick="window.location.href='/cars/new'">+ Add Vehicle</button>
+            </div>
+            <div class="panel-toolbar">
+                <div class="search-bar small-search">
+                    <span>🔍</span>
+                    <input type="text" placeholder="Search vehicles...">
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Owner</th>
+                        <th>Make & Model</th>
+                        <th>Year</th>
+                        <th>License Plate</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="carTable"></tbody>
+            </table>
+        </div>
+
+        <!-- Services Panel -->
+        <div class="panel" id="panel-services">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <h3>Services</h3>
+                    <p>Track all service records and repairs</p>
+                </div>
+                <button class="btn-add" onclick="window.location.href='/service-records/new'">+ Add Service</button>
+            </div>
+            <div class="panel-toolbar">
+                <div class="search-bar small-search">
+                    <span>🔍</span>
+                    <input type="text" placeholder="Search services...">
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Car</th>
+                        <th>Date</th>
+                        <th>Description</th>
+                        <th>Cost</th>
+                        <th>Status</th>
+                        <th>Invoice</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="recordTable"></tbody>
+            </table>
+        </div>
+
+        <!-- Reminders Panel -->
+        <div class="panel" id="panel-reminders">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <h3>Reminders</h3>
+                    <p>Manage all active and overdue service reminders</p>
+                </div>
+                <button class="btn-add" onclick="window.location.href='/reminders/new'">+ Add Reminder</button>
+            </div>
+            <div class="panel-toolbar">
+                <div class="search-bar small-search">
+                    <span>🔍</span>
+                    <input type="text" placeholder="Search reminders...">
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Car</th>
+                        <th>Type</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="reminderTable"></tbody>
+            </table>
+        </div>
+
+        <!-- Reviews Panel -->
+        <div class="panel" id="panel-reviews">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <h3>Reviews</h3>
+                    <p>Read customer feedback and reviews</p>
+                </div>
+                <button class="btn-add" onclick="window.location.href='/reviews/new'">+ Add Review</button>
+            </div>
+            <div class="panel-toolbar">
+                <div class="search-bar small-search">
+                    <span>🔍</span>
+                    <input type="text" placeholder="Search reviews...">
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Customer</th>
+                        <th>Rating</th>
+                        <th>Comments</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="reviewTable"></tbody>
+            </table>
+        </div>
+
+        <!-- Inventory Panel -->
+        <div class="panel" id="panel-inventory">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <h3>Inventory Management</h3>
+                    <p>Track spare parts, stock levels, and pricing</p>
+                </div>
+                <button class="btn-add" onclick="window.location.href='/spare-parts/new'">+ Add Part</button>
+            </div>
+            <div class="panel-toolbar">
+                <div class="search-bar small-search">
+                    <span>🔍</span>
+                    <input type="text" placeholder="Search inventory...">
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Part Name</th>
+                        <th>Category</th>
+                        <th>Price (Rs.)</th>
+                        <th>Stock Quantity</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="inventoryTable"></tbody>
+            </table>
+        </div>
+
+        <!-- Part Requests Panel -->
+        <div class="panel" id="panel-requests">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <h3>Customer Part Requests</h3>
+                    <p>Manage and fulfill customer inquiries for spare parts</p>
+                </div>
+            </div>
+            <div class="panel-toolbar">
+                <div class="search-bar small-search">
+                    <span>🔍</span>
+                    <input type="text" placeholder="Search requests...">
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Requester</th>
+                        <th>Part Requested</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="requestTable"></tbody>
+            </table>
+        </div>
+        <!-- Service Bookings Panel -->
+        <div class="panel" id="panel-bookings">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                        <span style="font-size: 20px; color: #1bc3a1;">📅</span>
+                        <h3 style="margin: 0;">Bookings & Payments</h3>
+                    </div>
+                    <p>Manage appointments and track payments</p>
+                </div>
+                <button class="btn-add" onclick="window.location.href='/service-records/new'">+ New Booking</button>
+            </div>
+            <div class="panel-toolbar">
+                <div class="tab-switcher">
+                    <button class="tab-btn active" id="btn-list-view" onclick="switchBookingView('list')">List View</button>
+                    <button class="tab-btn" id="btn-calendar-view" onclick="switchBookingView('calendar')">Calendar View</button>
+                </div>
+                <div class="search-bar small-search" style="margin-top: 10px;" id="booking-search-wrap">
+                    <span>🔍</span>
+                    <input type="text" placeholder="Search bookings...">
+                </div>
+            </div>
+            <div id="bookingListTableWrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Customer</th>
+                            <th>Vehicle</th>
+                            <th>Service</th>
+                            <th>Date & Time</th>
+                            <th>Status</th>
+                            <th>Cost</th>
+                            <th style="text-align: right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminBookingTable">
+                        <!-- Loaded via JS -->
+                    </tbody>
+                </table>
+            </div>
+            <div id="bookingCalendar" style="display: none;"></div>
+        </div>
+
+        <!-- Dashboard Panel -->
+        <div class="panel" id="panel-dashboard">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <h3>Dashboard</h3>
+                    <p>Welcome back! Here's an overview of your business.</p>
+                </div>
+            </div>
+            <div style="display: flex; gap: 24px; padding: 24px; align-items: flex-start;">
+                <!-- Left Side: Cards -->
+                <div class="dash-cards" style="flex: 2; padding: 0;">
+                    <div class="d-card">
+                        <h2 id="stTotalCars" class="c-teal">0</h2>
+                        <p><span class="icon">🚗</span> Total Cars</p>
+                    </div>
+                    <div class="d-card">
+                        <h2 id="stServiceRecords" class="c-teal">0</h2>
+                        <p><span class="icon">🔧</span> Service Records</p>
+                    </div>
+                    <div class="d-card">
+                        <h2 id="stActiveReminders" class="c-teal">0</h2>
+                        <p><span class="icon">⏰</span> Active Reminders</p>
+                    </div>
+                    <div class="d-card">
+                        <h2 id="stOverdueReminders" class="c-red">0</h2>
+                        <p><span class="icon">🚨</span> Overdue Reminders</p>
+                    </div>
+                    <div class="d-card">
+                        <h2 id="stAvgRating" class="c-teal">N/A</h2>
+                        <p><span class="icon">⭐</span> Avg Rating (<span id="stTotalReviews">0</span> reviews)</p>
+                    </div>
+                    <div class="d-card">
+                        <h2 id="stLowStock" class="c-red">0</h2>
+                        <p><span class="icon">⚠️</span> Low Stock (<span id="stTotalParts">0</span> total parts)</p>
+                    </div>
+                </div>
+
+                <!-- Right Side: Customer Details -->
+                <div style="flex: 1; background: #2f3148; border-radius: 12px; border: 1px solid #3c3e56; padding: 24px; min-width: 250px;">
+                    <h3 style="font-size: 16px; margin-bottom: 16px; border-bottom: 1px solid #3c3e56; padding-bottom: 12px; color: #fff;">Recent Customers</h3>
+                    <div id="dashRecentCustomers" style="display: flex; flex-direction: column; gap: 12px;">
+                        <!-- Populated by JS -->
+                    </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Delete Account Overlay -->
+<div class="del-overlay" id="delOverlay">
+    <div class="del-popup">
+        <div class="del-icon">⚠️</div>
+        <h3>Delete Account?</h3>
+        <p>This will permanently delete your account and all your data. This action cannot be undone.</p>
+        <div class="del-btns">
+            <button class="del-cancel" onclick="hideDeleteConfirm()">Cancel</button>
+            <button class="del-confirm" onclick="deleteAccount()">Yes, Delete</button>
+        </div>
+    </div>
+</div>
+
+    </div>
+</div>
+
+<script>
+    const admin = JSON.parse(localStorage.getItem('loggedUser'));
+    if (!admin || (admin.role !== 'ADMIN' && admin.role !== 'SUPER_ADMIN')) {
+      window.location.href = 'index.html';
+    }
+
+    function showPanel(panelId) {
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+        
+        const panel = document.getElementById('panel-' + panelId);
+        if (panel) panel.classList.add('active');
+        
+        const nav = document.getElementById('nav-' + panelId);
+        if (nav) nav.classList.add('active');
+        
+        localStorage.setItem('adminActivePanel', panelId);
+    }
+
+    // Initial Panel Load
+    const savedPanel = localStorage.getItem('adminActivePanel') || 'customers';
+    showPanel(savedPanel);
+
+    async function loadUsers() {
+      try {
+        const res = await fetch('/api/users');
+        if (!res.ok) return;
+        const users = await res.json();
+        
+        const customers = users.filter(u => u.role === 'USER');
+        const admins = users.filter(u => u.role === 'ADMIN' || u.role === 'SUPER_ADMIN');
+
+        const renderUser = (u) => {
+            let actions = '';
+            if (admin.role === 'SUPER_ADMIN' && u.role !== 'SUPER_ADMIN') {
+                actions = `
+                  ${u.role === 'USER' 
+                    ? `<button class="btn-table btn-promote" onclick="changeRole(${u.id}, 'ADMIN')">Promote ⬆️</button>`
+                    : `<button class="btn-table btn-demote" onclick="changeRole(${u.id}, 'USER')">Demote ⬇️</button>`
+                  }
+                  <button class="btn-table btn-del" onclick="deleteUser(${u.id})">Delete 🗑️</button>
+                `;
+            } else if (u.role === 'SUPER_ADMIN') {
+                actions = `<span style="color:#f1c40f; font-weight:bold; font-size:12px;">👑 Primary Admin</span>`;
+            } else {
+                actions = `<span style="color:#8b92a5; font-size: 12px;">Restricted</span>`;
+            }
+
+            return `
+              <tr>
+                <td>${u.name}</td>
+                <td>${u.email}</td>
+                <td>${u.phone || '+1 555 000 0000'}</td>
+                <td><span class="status-badge ${u.role === 'USER' ? 'status-active' : 'status-inactive'}">${u.role}</span></td>
+                <td>${actions}</td>
+              </tr>
+            `;
+        };
+
+        document.getElementById('userTable').innerHTML = customers.map(renderUser).join('');
+        document.getElementById('teamTable').innerHTML = admins.map(renderUser).join('');
+        
+        const recentBox = document.getElementById('dashRecentCustomers');
+        if (recentBox) {
+            recentBox.innerHTML = customers.slice(0, 6).map(u => `
+                <div style="display: flex; align-items: center; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid #3c3e56;">
+                    <div style="width: 36px; height: 36px; border-radius: 50%; background: rgba(27, 195, 161, 0.2); color: #1bc3a1; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px;">
+                        ${u.name ? u.name.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                    <div>
+                        <h4 style="font-size: 14px; font-weight: 600; color: #fff;">${u.name}</h4>
+                        <p style="font-size: 12px; color: #8b92a5;">${u.email}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+      } catch (e) { console.error('Error loading users:', e); }
+    }
+
+    async function changeRole(id, newRole) {
+      if (!confirm(`Are you sure you want to change this role?`)) return;
+      await fetch(`/api/users/${id}/role?role=${newRole}`, { method: 'PUT' });
+      loadUsers();
+    }
+
+    async function deleteUser(id) {
+      if (!confirm('Are you sure you want to delete this user?')) return;
+      await fetch(`/api/users/${id}`, { method: 'DELETE' });
+      loadUsers();
+    }
+
+    async function loadCars() {
+      const res = await fetch('/cars/api');
+      if (!res.ok) return;
+      const cars = await res.json();
+      document.getElementById('carTable').innerHTML = cars.map(c => `
+        <tr>
+          <td>#${c.id}</td>
+          <td>${c.owner ? c.owner.name + ' (' + c.owner.email + ')' : '-'}</td>
+          <td>${c.make} ${c.model}</td>
+          <td>${c.year || '-'}</td>
+          <td>${c.licensePlate || '-'}</td>
+          <td>
+            <button class="btn-table btn-edit" onclick="window.location.href='/cars/${c.id}/edit'">Edit ✏️</button>
+            <button class="btn-table btn-del" onclick="if(confirm('Delete this vehicle?')) window.location.href='/cars/${c.id}/delete'">Delete 🗑️</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function loadRecords() {
+      const res = await fetch('/service-records/api');
+      if (!res.ok) return;
+      const records = await res.json();
+      document.getElementById('recordTable').innerHTML = records.map(r => `
+        <tr>
+          <td>#${r.id}</td>
+          <td>${r.car ? r.car.make + ' ' + r.car.model : '-'}</td>
+          <td>${r.date || '-'}</td>
+          <td>${r.description || '-'}</td>
+          <td>Rs. ${r.cost || '0'}</td>
+          <td><span class="status-badge status-active">${r.status}</span></td>
+          <td>
+            ${r.invoicePath 
+              ? `<a href="/service-records/download/${r.invoicePath}" class="btn-table btn-promote" target="_blank">📄 View</a>` 
+              : `<span class="status-badge status-inactive">Pending</span>`
+            }
+          </td>
+          <td>
+            <button class="btn-table btn-edit" onclick="window.location.href='/service-records/${r.id}/edit'">Edit ✏️</button>
+            <button class="btn-table btn-del" onclick="if(confirm('Delete this record?')) window.location.href='/service-records/${r.id}/delete'">Delete 🗑️</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function loadReminders() {
+      const res = await fetch('/reminders/api');
+      if (!res.ok) return;
+      const reminders = await res.json();
+      document.getElementById('reminderTable').innerHTML = reminders.map(r => `
+        <tr>
+          <td>#${r.id}</td>
+          <td>${r.car ? r.car.make + ' ' + r.car.model : '-'}</td>
+          <td>${r.reminderType || '-'}</td>
+          <td>${r.dueDate || '-'}</td>
+          <td><span class="status-badge ${r.status === 'ACTIVE' ? 'status-active' : 'status-inactive'}">${r.status}</span></td>
+          <td>
+            <button class="btn-table btn-edit" onclick="window.location.href='/reminders/${r.id}/edit'">Edit ✏️</button>
+            <button class="btn-table btn-del" onclick="if(confirm('Delete this reminder?')) window.location.href='/reminders/${r.id}/delete'">Delete 🗑️</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function loadReviews() {
+      const res = await fetch('/reviews/api');
+      if (!res.ok) return;
+      const reviews = await res.json();
+      document.getElementById('reviewTable').innerHTML = reviews.map(r => `
+        <tr>
+          <td>#${r.id}</td>
+          <td>${r.user ? r.user.name : '-'}</td>
+          <td>${'⭐'.repeat(r.rating || 0)}</td>
+          <td>${r.comment || '-'}</td>
+          <td>${r.dateSubmitted || '-'}</td>
+          <td>
+            <button class="btn-table btn-edit" onclick="window.location.href='/reviews/${r.id}/edit'">Edit ✏️</button>
+            <button class="btn-table btn-del" onclick="if(confirm('Delete this review?')) window.location.href='/reviews/${r.id}/delete'">Delete 🗑️</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function loadStats() {
+      const res = await fetch('/api/admin/stats');
+      if (!res.ok) return;
+      const stats = await res.json();
+      
+      document.getElementById('stTotalCars').textContent = stats.totalCars;
+      document.getElementById('stServiceRecords').textContent = stats.totalRecords;
+      document.getElementById('stActiveReminders').textContent = stats.activeReminders;
+      document.getElementById('stOverdueReminders').textContent = stats.overdueReminders;
+      document.getElementById('stAvgRating').textContent = stats.avgRating;
+      document.getElementById('stTotalReviews').textContent = stats.totalReviews;
+      document.getElementById('stLowStock').textContent = stats.lowStockParts;
+      document.getElementById('stTotalParts').textContent = stats.totalParts;
+    }
+
+    // Dropdown toggle
+    function toggleDropdown() {
+      document.getElementById('dropdown').classList.toggle('open');
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+      const wrap = document.getElementById('profileBtn');
+      const dd   = document.getElementById('dropdown');
+      if (wrap && dd && !wrap.contains(e.target) && !dd.contains(e.target)) {
+        dd.classList.remove('open');
+      }
+    });
+
+    // Delete account
+    function showDeleteConfirm() {
+      const dd = document.getElementById('dropdown');
+      if(dd) dd.classList.remove('open');
+      document.getElementById('delOverlay').classList.add('show');
+    }
+    function hideDeleteConfirm() {
+      document.getElementById('delOverlay').classList.remove('show');
+    }
+    async function deleteAccount() {
+      const userId = [[${currentUserId}]];
+      if(!userId) return;
+      const res = await fetch(`/api/users/${userId}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        localStorage.removeItem('loggedUser');
+        document.cookie = "userId=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        document.cookie = "userRole=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        alert('Your account has been deleted.');
+        window.location.href = '/index.html';
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('loggedUser');
+      document.cookie = "userId=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      document.cookie = "userRole=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      window.location.href = '/index.html';
+    }
+
+    async function loadInventory() {
+      const res = await fetch('/spare-parts/api');
+      if (!res.ok) return;
+      const parts = await res.json();
+      document.getElementById('inventoryTable').innerHTML = parts.map(p => {
+        const isLow = (p.quantityInStock || 0) <= (p.minimumStockLevel || 0);
+        return `
+          <tr>
+            <td>#${p.id}</td>
+            <td>${p.partName || '-'}</td>
+            <td>${p.category || '-'}</td>
+            <td>${p.unitPrice || '0.00'}</td>
+            <td style="font-weight: 600;">${p.quantityInStock || 0}</td>
+            <td>
+              <span class="status-badge ${isLow ? 'status-inactive' : 'status-active'}">
+                ${isLow ? '⚠️ Low Stock' : '✅ In Stock'}
+              </span>
+            </td>
+            <td>
+              <button class="btn-table btn-edit" onclick="window.location.href='/spare-parts/${p.id}/edit'">Edit ✏️</button>
+              <button class="btn-table btn-del" onclick="if(confirm('Delete this part?')) window.location.href='/spare-parts/${p.id}/delete'">Delete 🗑️</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function fulfillRequest(id) {
+      if(!confirm('Mark this request as fulfilled?')) return;
+      const res = await fetch(`/spare-parts/requests/${id}/fulfill`, { method: 'POST' });
+      if(res.ok) {
+        loadRequests();
+      } else {
+        alert('Error fulfilling request');
+      }
+    }
+
+    async function loadRequests() {
+      const res = await fetch('/spare-parts/requests/api');
+      if (!res.ok) return;
+      const requests = await res.json();
+      document.getElementById('requestTable').innerHTML = requests.map(r => `
+        <tr>
+          <td>#${r.id}</td>
+          <td>
+            <div style="font-weight:600; color:#fff;">${r.user ? r.user.name : 'Unknown'}</div>
+            <div style="font-size:11px; color:#8b92a5;">${r.user ? r.user.email : '-'}</div>
+          </td>
+          <td><span style="color:#a78bfa; font-weight:500;">${r.partName}</span></td>
+          <td>${new Date(r.requestDate).toLocaleDateString()}</td>
+          <td>
+            <span class="status-badge ${r.status === 'PENDING' ? 'status-inactive' : 'status-active'}">
+              ${r.status}
+            </span>
+          </td>
+          <td>
+            ${r.status === 'PENDING' ? 
+              `<button class="btn-table btn-edit" onclick="fulfillRequest(${r.id})">Fulfill ✅</button>` : 
+              `<span style="color:#10b981; font-size:12px;">Completed</span>`}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function approveBooking(id) {
+        if(!confirm('Approve this booking?')) return;
+        window.location.href = `/service-records/approve-request/${id}`;
+    }
+
+    async function completeBooking(id) {
+        if(!confirm('Proceed to complete this service record?')) return;
+        window.location.href = `/service-records/${id}/complete`;
+    }
+
+    async function loadBookings() {
+      const res = await fetch('/service-records/api');
+      if (!res.ok) return;
+      const records = await res.json();
+      const bookings = records.filter(r => r.status === 'PENDING' || r.status === 'APPROVED');
+      
+      window.allBookings = records; // Store globally for calendar
+
+      document.getElementById('adminBookingTable').innerHTML = bookings.map(r => {
+        const statusClass = r.status === 'APPROVED' ? 'badge-scheduled' : (r.status === 'PENDING' ? 'badge-in-progress' : 'badge-completed');
+        const displayStatus = r.status === 'APPROVED' ? 'Scheduled' : (r.status === 'PENDING' ? 'In Progress' : 'Completed');
+
+        return `
+          <tr>
+            <td style="color: #8b92a5; font-size: 11px; font-weight: 600;">BK${String(r.id).padStart(3, '0')}</td>
+            <td>
+              <div style="font-weight:600; color:#fff;">${r.car && r.car.owner ? r.car.owner.name : 'Unknown'}</div>
+            </td>
+            <td>${r.car ? `${r.car.make} ${r.car.model} (${r.car.licensePlate || '-'})` : '-'}</td>
+            <td style="font-weight: 500; color: #fff;">${r.serviceType}</td>
+            <td>
+              <div style="color: #fff; font-weight: 500;">${r.date || '-'}</div>
+              <div style="font-size: 11px; color: #8b92a5;">09:00 AM</div>
+            </td>
+            <td>
+              <span class="status-badge ${statusClass}" style="font-size: 10px; min-width: 80px; text-align: center;">${displayStatus}</span>
+            </td>
+            <td>
+              <div style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500;">
+                <span style="color: ${r.paymentStatus === 'PAID' ? '#10b981' : (r.paymentStatus === 'CASH_ON_DELIVERY' ? '#3b82f6' : '#f39c12')}">
+                    ${r.paymentStatus === 'PAID' ? '✅ Paid' : (r.paymentStatus === 'CASH_ON_DELIVERY' ? '💵 COD' : '🕒 Pending')}
+                </span>
+                <span style="color: #8b92a5; font-size: 11px; font-weight: 400;">(Rs. ${r.cost || '0.00'})</span>
+              </div>
+            </td>
+            <td style="text-align: right; white-space: nowrap;">
+              <div style="display: flex; gap: 4px; justify-content: flex-end;">
+                <button class="btn-table btn-promote" title="Approve" onclick="window.location.href='/service-records/${r.id}/update-status?status=APPROVED'">✔️ Appr</button>
+                <button class="btn-table btn-demote" title="Pending" onclick="window.location.href='/service-records/${r.id}/update-status?status=PENDING'">⏳ Pend</button>
+                <button class="btn-table btn-edit" title="Complete" onclick="completeBooking(${r.id})">🏁 Done</button>
+                <button class="btn-table btn-del" title="Reject" onclick="window.location.href='/service-records/${r.id}/update-status?status=REJECTED'">❌ Rej</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    let calendarObj = null;
+    function switchBookingView(view) {
+        const tableWrap = document.getElementById('bookingListTableWrap');
+        const calWrap = document.getElementById('bookingCalendar');
+        const searchWrap = document.getElementById('booking-search-wrap');
+        const btnList = document.getElementById('btn-list-view');
+        const btnCal = document.getElementById('btn-calendar-view');
+
+        if (view === 'calendar') {
+            tableWrap.style.display = 'none';
+            searchWrap.style.display = 'none';
+            calWrap.style.display = 'block';
+            btnList.classList.remove('active');
+            btnCal.classList.add('active');
+            initCalendar();
+        } else {
+            tableWrap.style.display = 'block';
+            searchWrap.style.display = 'flex';
+            calWrap.style.display = 'none';
+            btnList.classList.add('active');
+            btnCal.classList.remove('active');
+        }
+    }
+
+    function initCalendar() {
+        if (calendarObj) {
+            calendarObj.render();
+            return;
+        }
+        
+        const calendarEl = document.getElementById('bookingCalendar');
+        calendarObj = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            },
+            events: window.allBookings.map(r => ({
+                id: r.id,
+                title: `${r.car ? r.car.make : ''} - ${r.serviceType}`,
+                start: r.date,
+                className: r.status === 'APPROVED' ? 'status-event-approved' : 'status-event-pending',
+                extendedProps: { r: r }
+            })),
+            eventClick: function(info) {
+                const r = info.event.extendedProps.r;
+                alert(`Booking Info:\nCustomer: ${r.car && r.car.owner ? r.car.owner.name : 'Unknown'}\nVehicle: ${r.car ? r.car.make + ' ' + r.car.model : '-'}\nService: ${r.serviceType}\nStatus: ${r.status}`);
+            }
+        });
+        calendarObj.render();
+    }
+
+    loadUsers();
+    loadCars();
+    loadRecords();
+    loadReminders();
+    loadInventory();
+    loadRequests();
+    loadBookings();
+    loadReviews();
+    loadStats();
+</script>
 </body>
 </html>
