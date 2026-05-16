@@ -13,6 +13,10 @@
     <version>0.0.1-SNAPSHOT</version>
     <name>feedback_review_management</name>
     <description>feedback_review_management</description>
+    <artifactId>car_management</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>car_management</name>
+    <description>car_management</description>
     <url/>
     <licenses>
         <license/>
