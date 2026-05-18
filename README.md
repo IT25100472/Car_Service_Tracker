@@ -1,4 +1,4 @@
-# Car_Service_Tracker# CSMT - Car Service and Maintenance Tracker
+# CSMT - Car Service and Maintenance Tracker
 
 A comprehensive full-stack application for managing vehicle maintenance schedules, tracking service history, and monitoring overall car health.
 
@@ -20,12 +20,11 @@ A comprehensive full-stack application for managing vehicle maintenance schedule
 
 CSMT (Car Service and Maintenance Tracker) is a modern full-stack application designed to streamline vehicle upkeep. It provides tools for logging service records, setting automated maintenance reminders, and managing automotive logistics.
 
-
 ## 💻 Tech Stack
 
 * **Backend:** Java 17, Spring Boot
 * **Database:** MySQL
-* **Frontend:** Next.js
+* **Frontend:** HTML, CSS
 
 ## 🤝 Contributing
 
